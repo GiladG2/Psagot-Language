@@ -1,0 +1,4 @@
+string breakfast = "bagels";
+Write(breakfast); // "bagels".
+var breakfast = "beignets";
+Write (breakfast);

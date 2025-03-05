@@ -1,0 +1,15 @@
+D:\Projects\Psagot\Interpeter\bin\Debug\net9.0\Interpeter.exe
+D:\Projects\Psagot\Interpeter\bin\Debug\net9.0\Interpeter.deps.json
+D:\Projects\Psagot\Interpeter\bin\Debug\net9.0\Interpeter.runtimeconfig.json
+D:\Projects\Psagot\Interpeter\bin\Debug\net9.0\Interpeter.dll
+D:\Projects\Psagot\Interpeter\bin\Debug\net9.0\Interpeter.pdb
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\Interpeter.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\Interpeter.AssemblyInfoInputs.cache
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\Interpeter.AssemblyInfo.cs
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\Interpeter.csproj.CoreCompileInputs.cache
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\Interpeter.sourcelink.json
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\Interpeter.dll
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\refint\Interpeter.dll
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\Interpeter.pdb
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\Interpeter.genruntimeconfig.cache
+D:\Projects\Psagot\Interpeter\obj\Debug\net9.0\ref\Interpeter.dll

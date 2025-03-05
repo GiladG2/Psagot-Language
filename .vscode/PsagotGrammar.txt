@@ -1,0 +1,61 @@
+
+int - integer variable
+string - string variable
+Write - print
+"" - string
+; - end of line
+-x - x = x-1
++x - x = x+1
+nul - null
+less < than;
+lessThan <= orEqual;
+greater > than;
+greaterThan >= orEqual;
+true - true
+false - false
+!true - false
+!false - true
+and - &&
+or - ||
+var - variable
+method [psagot] - function
+methodName(var,var,var); - triggering a function
+for(int i=0;i<10;+i){
+
+}
+- for loops
+while(i<10) - while loops
+return - return
+void - return => nul
+
+class Breakfast {
+  cook() {
+    Write("Eggs a-fryin'!") ;
+  }
+
+  serve(who) {
+    Write("Enjoy your breakfast, " + who + ".") ;
+  }
+} - class
+
+var breakfast = Breakfast(); - creation of a breakfast
+
+class Breakfast {
+  init(meat, bread) {
+    this.meat = meat;
+    this.bread = bread;
+  }
+} - constructor
+
+
+class Brunch <= Breakfast{
+
+} - Inheritance
+
+class Brunch < Breakfast {
+  init(meat, bread, drink) {
+    super.init(meat, bread);
+    this.drink = drink;
+  }
+} - Inheritance constructor
+
