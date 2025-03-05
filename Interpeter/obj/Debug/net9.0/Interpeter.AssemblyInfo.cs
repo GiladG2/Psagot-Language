@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Interpeter")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0af4cb4584c2d8a228a21c6aa88de269fd80c49")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+243befe9a3de6a1cbf1689b7b6bfabaf191e243d")]
 [assembly: System.Reflection.AssemblyProductAttribute("Interpeter")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Interpeter")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
