@@ -32,20 +32,23 @@ public class Token
     private string lexeme;
     private object literal;
     private int line;
+     
 
+    public string Lexeme {get => lexeme; set => lexeme = value; }
+    public TokenType TokenType {get => tokenType; set=> tokenType = value;} 
+    public object Literal {get => literal; set => literal = value; }
+    public int Line{get => line; set => line = value;}
     public Token(TokenType tokenType, string lexeme, object literal, int line)
     {
         this.tokenType = tokenType;
         this.lexeme = lexeme;
         this.literal = literal;
         this.line = line;
-
-
     }
 
     public override string ToString()
     {
-        return $"{line} {lexeme} {literal}";
+        return $" {line}, {lexeme}, {literal}";
     }
 }
 

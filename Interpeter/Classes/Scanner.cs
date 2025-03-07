@@ -41,17 +41,41 @@ public class Scanner
             case '-': addToken(TokenType.MINUS); break;
             case '+': addToken(TokenType.PLUS); break;
             case ';': addToken(TokenType.SEMICOLON); break;
-            case '*': addToken(TokenType.STAR); break;
+            case '*':
+                if (peek() == '/')
+                    Psagot.error(line, "Comment has no opening tag");
+                else
+                    addToken(TokenType.STAR);
+                break;
             case '!': addToken(match('=') ? TokenType.NOT_EQUAL : TokenType.NOT); break;
             case '<': addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
             case '>': addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
             case '=': addToken(match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL); break;
             case '/':
-                if (match('/'))
+                if (peek() == '*')
                 {
-                    // A comment goes until the end of the line.
+                    advance();
+                    advance();
+                    while (peek() != '*' && current < source.Length) advance();
+                    if (current >= source.Length)
+                    {
+                        Psagot.error(line, "Unclosed comment");
+                        break;
+                    }
+                    advance();
+                    if (peek() == '/')
+                        advance();
+                    else
+                    {
+                        Psagot.error(line, "Incorrect comment syntax");
+                        break;
+                    }
+                }
+                if (peek() == '/')
+                {
                     while (peek() != '\n' && current < source.Length) advance();
                 }
+
                 else
                 {
                     addToken(TokenType.SLASH);
