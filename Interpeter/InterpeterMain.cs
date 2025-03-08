@@ -6,6 +6,7 @@ public class Psagot
 {
 
     static bool hadError = false;
+    private readonly static Interpeter interpeter = new Interpeter();
     public static void Main(string[] args)
     {
 
@@ -59,9 +60,12 @@ public class Psagot
                 // Environment.Exit(65);
 
             }
-            // Console.WriteLine(token);
+            Console.WriteLine(token);
         }
-        System.Console.WriteLine(new AstPrinter().Print(expression));
+
+        System.Console.WriteLine(new AstPrinter().Print(expression)); 
+        interpeter.Interpert(expression);
+
     }
 
     public static void error(int line, string message)

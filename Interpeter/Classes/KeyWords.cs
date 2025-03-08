@@ -9,7 +9,7 @@ public class KeyWords
     { "for", TokenType.FOR },
     { "fun", TokenType.METHOD },
     { "if", TokenType.IF },
-    { "nil", TokenType.NUL },
+    { "nul", TokenType.NUL },
     { "or", TokenType.OR },
     { "print", TokenType.WRITE },
     { "return", TokenType.RETURN },
