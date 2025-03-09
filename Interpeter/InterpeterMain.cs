@@ -6,12 +6,10 @@ public class Psagot
 {
 
     static bool hadError = false;
+    static bool hadRuntimeError = false;
     private readonly static Interpeter interpeter = new Interpeter();
     public static void Main(string[] args)
     {
-
-
-
         if (args.Length > 1)
         {
             throw new Exception("Usage : Sky Interpeter");
@@ -44,6 +42,7 @@ public class Psagot
             if (line == null) break;
             run(line);
             hadError = false;
+            hadRuntimeError = false;
         }
     }
     private static void run(string source)
@@ -55,15 +54,13 @@ public class Psagot
         foreach (Token token in tokens)
         {
             if (hadError)
-            {
-                return;
-                // Environment.Exit(65);
-
-            }
+                 Environment.Exit(65);
+            if(hadRuntimeError)
+                 Environment.Exit(70);
             Console.WriteLine(token);
         }
 
-        System.Console.WriteLine(new AstPrinter().Print(expression)); 
+        System.Console.WriteLine(new AstPrinter().Print(expression));
         interpeter.Interpert(expression);
 
     }
@@ -88,5 +85,11 @@ public class Psagot
     {
         Console.WriteLine($"[line {line} ] An error occured {where} : {message}");
         hadError = true;
+    }
+
+    public static void RunTimeError(RunTimeError runTimeError)
+    {
+        System.Console.WriteLine(runTimeError.Message + "\n[line " + runTimeError.Token.Line + "]");
+        hadRuntimeError = true;
     }
 }

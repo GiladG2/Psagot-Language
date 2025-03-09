@@ -10,7 +10,6 @@ public class Parser
     }
     public Parser()
     {
-
     }
     private Expression ExpressionParse()
     {
@@ -159,16 +158,24 @@ public class Parser
     }
 
 
-    public Expression Parse()
+    public List<Statements> Parse()
     {
-        try
-        {
-            return ExpressionParse();
-        }
-        catch (ParseError error)
-        {
-            return null;
-        }
+        List<Statements> statements = new List<Statements>();
+        while (!isAtEnd())
+            statements.Add(Statement());
+        return statements;
+
+    }
+
+    private Statements Statement(){
+        if(Match(TokenType.WRITE))
+           return WriteStatement();
+        return ExpressionStatement();
+    }
+
+    private Statements WriteStatement(){
+        Expression value = ExpressionParse();
+        return new Write(value);
     }
 }
 

@@ -1,10 +1,10 @@
 
 using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
 public class Interpeter : Visitor<object>
 {
-
 
     public object VisitLiteralExpression(Literal literalExpression)
     {
@@ -24,6 +24,7 @@ public class Interpeter : Visitor<object>
         switch (unaryExpression.Operation.TokenType)
         {
             case TokenType.MINUS:
+                IsNumberOperand(unaryExpression.Operation, right);
                 return -(double)right;
             case TokenType.NOT:
                 return !IsTrue(right);
@@ -39,32 +40,67 @@ public class Interpeter : Visitor<object>
         switch (binaryExperssion.Operation.TokenType)
         {
             case TokenType.MINUS:
+                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left - (double)right;
             case TokenType.PLUS:
-                if (left is string && right is string)
+                if ((left is string && right is string) || (left is string || right is string))
                 {
-                    return (string)left + (string)right;
+                    return left.ToString() + right.ToString();
                 }
                 if (left is int && right is int || right is double && left is double)
                 {
                     return (double)left + (double)right;
                 }
-                break;
+                throw new RunTimeError(binaryExperssion.Operation, "Addition expects two string or two numbers");
             case TokenType.SLASH:
+                if ((double)right == 0 || (int)right == 0)
+                    throw new RunTimeError(binaryExperssion.Operation, "Attempt of division by 0");
+                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left / (double)right;
             case TokenType.STAR:
+                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left * (double)right;
             case TokenType.GREATER:
+                if (left is string && right is string)
+                {
+                    string left2 = (string)left;
+                    string right2 = (string)right;
+                    return left2.CompareTo(right2) > 0;
+                }
+                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left > (double)right;
             case TokenType.GREATER_EQUAL:
+                if (left is string && right is string)
+                {
+                    string left2 = (string)left;
+                    string right2 = (string)right;
+                    return left2.CompareTo(right2) >= 0;
+                }
+                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left >= (double)right;
             case TokenType.LESS:
+                if (left is string && right is string)
+                {
+                    string left2 = (string)left;
+                    string right2 = (string)right;
+                    return left2.CompareTo(right2) < 0;
+                }
+                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left < (double)right;
             case TokenType.LESS_EQUAL:
+                if (left is string && right is string)
+                {
+                    string left2 = (string)left;
+                    string right2 = (string)right;
+                    return left2.CompareTo(right2) <= 0;
+                }
+                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left <= (double)right;
             case TokenType.NOT_EQUAL:
+                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return !IsEqual(left, right);
             case TokenType.EQUAL_EQUAL:
+                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return IsEqual(left, right);
         }
         return null;
@@ -95,8 +131,15 @@ public class Interpeter : Visitor<object>
 
     public void Interpert(Expression expression)
     {
-        object value = Evaluate(expression);
-        System.Console.WriteLine(ToString(value));
+        try
+        {
+            object value = Evaluate(expression);
+            System.Console.WriteLine(ToString(value));
+        }
+        catch (RunTimeError runTimeError)
+        {
+            Psagot.RunTimeError(runTimeError);
+        }
     }
 
     private string ToString(object value)
@@ -108,8 +151,37 @@ public class Interpeter : Visitor<object>
             string text = value.ToString();
             if (text.EndsWith(".0"))
                 text = text.Substring(0, text.Length - 2);
-                 return text;
+            return text;
         }
         return value.ToString();
     }
+
+    public void IsNumberOperand(Token operation, object operand)
+    {
+        if (operand is double || operand is int)
+            return;
+        throw new RunTimeError(operation, "Expected a number");
+    }
+    public void IsNumberOperand(Token operation, object left, object right)
+    {
+        if ((left is double && right is double) || (right is int && left is int))
+            return;
+        throw new RunTimeError(operation, "Expected a number");
+    }
+
+}
+
+public class RunTimeError : Exception
+{
+    private Token token;
+    private string message;
+
+    public Token Token { get => token; set => token = value; }
+    public string Message { get => message; set => message = value; }
+    public RunTimeError(Token operation, string message)
+    {
+        this.token = operation;
+        this.message = message;
+    }
+
 }
