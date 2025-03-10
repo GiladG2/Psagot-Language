@@ -2,16 +2,29 @@
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Xml;
 
-public class Interpeter : Visitor<object>
+public class Interpeter : Visitor<object>, StatementVisitor<object>
 {
 
+    private Environment environment = new Environment();
+    public object VisitExpressionStatement(ExpressionStatement expressionStatement)
+    {
+        Evaluate(expressionStatement.Expression);
+        return null;
+    }
+
+    public object VisitWrite(Write writeStatement){
+      object value = Evaluate(writeStatement.Expression);
+      Console.WriteLine(ToString(value));
+      return null;
+    }
     public object VisitLiteralExpression(Literal literalExpression)
     {
         return literalExpression.Value;
     }
 
-
+   
     public object VisitGroupingExpression(Grouping groupingExpression)
     {
         return Evaluate(groupingExpression.Expression);
@@ -106,7 +119,24 @@ public class Interpeter : Visitor<object>
         return null;
     }
 
+    public  object VisitVar(Var var){
+        object value = null;
+        if(var.Initializer != null){
+            value = Evaluate(var.Initializer);
+        }
+        environment.Define(var.Name.Lexeme,value);
+        return null;
+    }
+    public  object VisitVariable(Variable variableExpression){
+    return environment.GetValue(variableExpression.Name);
+    }
 
+    public object VisitAssign(Assign assignExpression){
+
+        object value = Evaluate(assignExpression.Value);
+        environment.Assign(assignExpression.Name,value);
+        return value;
+    }
     private object Evaluate(Expression expression)
     {
         return expression.Accept(this);
@@ -129,19 +159,20 @@ public class Interpeter : Visitor<object>
         return left.Equals(right);
     }
 
-    public void Interpert(Expression expression)
+    public void Interpert(List<Statements> program)
     {
         try
         {
-            object value = Evaluate(expression);
-            System.Console.WriteLine(ToString(value));
+            foreach(Statements statement in program){
+                Execute(statement);
+            }
         }
         catch (RunTimeError runTimeError)
         {
             Psagot.RunTimeError(runTimeError);
         }
     }
-
+    
     private string ToString(object value)
     {
         if (value == null)
@@ -155,7 +186,9 @@ public class Interpeter : Visitor<object>
         }
         return value.ToString();
     }
-
+    private void Execute (Statements statement){
+             statement.Accept(this);
+    }
     public void IsNumberOperand(Token operation, object operand)
     {
         if (operand is double || operand is int)
@@ -170,6 +203,8 @@ public class Interpeter : Visitor<object>
     }
 
 }
+
+
 
 public class RunTimeError : Exception
 {

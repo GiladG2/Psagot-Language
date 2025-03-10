@@ -13,7 +13,25 @@ public class Parser
     }
     private Expression ExpressionParse()
     {
-        return Equality();
+        return Assignment();
+    }
+
+    private Expression Assignment(){
+        Expression expression = Equality();
+
+        if(Match([TokenType.EQUAL])){
+            Token equals = previous();
+            Expression value = Assignment(); 
+
+            if(expression is Variable){
+                Token name = ((Variable)expression).Name;
+                return new Assign(name,value);
+            }
+
+            Error(equals,"Invalid assignment target");
+        }
+        return expression;
+
     }
     private Expression Equality()
     {
@@ -134,7 +152,8 @@ public class Parser
         {
             return new Literal(previous().Literal);
         }
-
+        if (Match([TokenType.IDENTIFIER]))
+            return new Variable(previous());
         if (Match([TokenType.LEFT_PAREN]))
         {
             Expression expression = ExpressionParse();
@@ -162,27 +181,57 @@ public class Parser
     {
         List<Statements> statements = new List<Statements>();
         while (!isAtEnd())
-            statements.Add(Statement());
+            statements.Add(Declaration());
         return statements;
 
     }
 
-    private Statements Statement(){
-        if(Match(TokenType.WRITE))
-           return WriteStatement();
+    private Statements Declaration()
+    {
+        try
+        {
+            if (Match([TokenType.VAR]))
+                return VarDeclaration();
+            return Statement();
+        }
+        catch (ParseError parseError)
+        {
+            parseError.Synchronize();
+            return null;
+        }
+    }
+    private Statements VarDeclaration()
+    {
+        Token name = Consume(TokenType.IDENTIFIER, "Expects variable name");
+        Expression init = null;
+        if (Match([TokenType.EQUAL]))
+            init = ExpressionParse();
+        return new Var(name, init);
+    }
+    private Statements Statement()
+    {
+        if (Match([TokenType.WRITE]))
+            return WriteStatement();
         return ExpressionStatement();
     }
 
-    private Statements WriteStatement(){
+    private Statements WriteStatement()
+    {
         Expression value = ExpressionParse();
         return new Write(value);
+    }
+
+    private Statements ExpressionStatement()
+    {
+        Expression value = ExpressionParse();
+        return new ExpressionStatement(value);
     }
 }
 
 public class ParseError : Exception
 {
     private readonly Parser parser = new Parser();
-    private void Synchronize()
+    public void Synchronize()
     {
         parser.advance();
 

@@ -64,7 +64,10 @@ public class Scanner
                     }
                     advance();
                     if (peek() == '/')
+                    {
                         advance();
+                        break;
+                    }
                     else
                     {
                         Psagot.error(line, "Incorrect comment syntax");

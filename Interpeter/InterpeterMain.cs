@@ -50,18 +50,16 @@ public class Psagot
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
-        Expression expression = parser.Parse();
+        List<Statements> statements = parser.Parse();
+
         foreach (Token token in tokens)
         {
             if (hadError)
-                 Environment.Exit(65);
-            if(hadRuntimeError)
-                 Environment.Exit(70);
-            Console.WriteLine(token);
+                return; 
+                if (hadRuntimeError)
+                return;
         }
-
-        System.Console.WriteLine(new AstPrinter().Print(expression));
-        interpeter.Interpert(expression);
+        interpeter.Interpert(statements);
 
     }
 

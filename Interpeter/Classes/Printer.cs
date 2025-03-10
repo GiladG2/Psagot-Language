@@ -23,6 +23,12 @@ public class AstPrinter : Visitor<string>
         return Parenthesize(unaryExpression.Operation.Lexeme,new Expression[]{unaryExpression.RightExpression});
         
     }
+    public string VisitVariable(Variable variable){
+        return Parenthesize(variable.Name.Lexeme, new Expression[2]);
+    }
+    public string VisitAssign(Assign assign){
+        return Parenthesize(assign.Name.Lexeme,[assign.Value]);
+    }
     private string Parenthesize(string name, Expression[] expression)
     {
         StringBuilder stringBuilder = new StringBuilder();

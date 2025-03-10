@@ -19,5 +19,6 @@ public class KeyWords
     { "var", TokenType.VAR },
     { "while", TokenType.WHILE },
     {"int", TokenType.NUMBER },
+    {"Write", TokenType.WRITE },
 };
 }

@@ -1,9 +1,13 @@
+using System.Reflection.Metadata.Ecma335;
+
 public interface Visitor<T>
 {
     T VisitBinaryExperssion(BinaryExpression binaryExpression);
     T VisitGroupingExpression(Grouping grouping);
     T VisitLiteralExpression(Literal literal);
     T VisitUnaryExpression(Unary unary);
+    T VisitVariable(Variable variable);
+    T VisitAssign(Assign assign);
 }
 
 public abstract class Expression
@@ -11,6 +15,22 @@ public abstract class Expression
     public abstract T Accept<T>(Visitor<T> visitor);
 }
 
+public class Assign:Expression{
+    private Token name;
+    private Expression value;
+    
+    public Token Name {get => name; set => name = value; }
+    public Expression Value {get => value; set => this.value = value;}
+    public Assign(Token name, Expression value){
+        this.name = name;
+        this.value = value;
+    }
+
+    public override T Accept<T>(Visitor<T> visitor)
+    {
+        return visitor.VisitAssign(this);
+    }
+}
 public class BinaryExpression : Expression
 {
     private Expression left;
@@ -86,5 +106,17 @@ public class Unary : Expression
     public override T Accept<T>(Visitor<T> visitor)
     {
         return visitor.VisitUnaryExpression(this);
+    }
+}
+
+public class Variable :Expression{
+    private Token name;
+    public Token Name { get => name; set => name = value; }
+    public Variable(Token name) {
+        this.name = name;
+    }
+    public override T Accept<T>(Visitor<T> visitor)
+    {
+        return visitor.VisitVariable(this);
     }
 }

@@ -1,1 +1,5 @@
-43 + 5*2 -2 
+Write "hi"
+var a = 2
+a = "3"
+var b = a
+Write a+b
