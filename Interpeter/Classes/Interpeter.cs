@@ -137,6 +137,23 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         environment.Assign(assignExpression.Name,value);
         return value;
     }
+    public object VisitBlock(Block block){
+        ExecuteBlock(block.Statements,new Environment(environment));
+        return null;
+    }
+
+    public void ExecuteBlock(List<Statements> statements, Environment environment){
+        Environment previous = this.environment;
+        try{
+            this.environment = environment;
+            foreach(Statements statement in statements){
+                Execute(statement);
+            }
+        }
+        finally{
+            this.environment = previous;
+        }
+    }
     private object Evaluate(Expression expression)
     {
         return expression.Accept(this);

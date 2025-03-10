@@ -16,19 +16,22 @@ public class Parser
         return Assignment();
     }
 
-    private Expression Assignment(){
+    private Expression Assignment()
+    {
         Expression expression = Equality();
 
-        if(Match([TokenType.EQUAL])){
+        if (Match([TokenType.EQUAL]))
+        {
             Token equals = previous();
-            Expression value = Assignment(); 
+            Expression value = Assignment();
 
-            if(expression is Variable){
+            if (expression is Variable)
+            {
                 Token name = ((Variable)expression).Name;
-                return new Assign(name,value);
+                return new Assign(name, value);
             }
 
-            Error(equals,"Invalid assignment target");
+            Error(equals, "Invalid assignment target");
         }
         return expression;
 
@@ -212,6 +215,8 @@ public class Parser
     {
         if (Match([TokenType.WRITE]))
             return WriteStatement();
+        if (Match([TokenType.LEFT_BRACE]))
+            return new Block(BlockStatement());
         return ExpressionStatement();
     }
 
@@ -225,6 +230,19 @@ public class Parser
     {
         Expression value = ExpressionParse();
         return new ExpressionStatement(value);
+    }
+
+    private List<Statements> BlockStatement()
+    {
+        List<Statements> statements = new List<Statements>();
+
+        while (!Check(TokenType.RIGHT_BRACE) && !isAtEnd())
+        {
+            statements.Add(Declaration());
+        }
+
+        Consume(TokenType.RIGHT_BRACE, "Expects '}' at the end of a block");
+        return statements;
     }
 }
 

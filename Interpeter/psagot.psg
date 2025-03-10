@@ -1,5 +1,5 @@
-Write "hi"
-var a = 2
-a = "3"
-var b = a
-Write a+b
+var a = 1
+{
+  var a = a + 2
+  Write a
+}

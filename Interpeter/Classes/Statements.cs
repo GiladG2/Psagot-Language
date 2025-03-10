@@ -4,6 +4,7 @@ public interface StatementVisitor<T>
     T VisitExpressionStatement(ExpressionStatement expressionStatement);
     T VisitWrite(Write write);
     T VisitVar(Var var);
+    T VisitBlock(Block block);
 }
 public abstract class Statements
 {
@@ -52,5 +53,18 @@ public class Var:Statements {
     public override T Accept<T>(StatementVisitor<T> visitor)
     {
         return visitor.VisitVar(this);
+    }
+}
+
+public class Block:Statements {
+
+    List<Statements> statements;
+    public List<Statements> Statements { get => statements; set => statements = value; }
+    public Block(List<Statements> statements){
+        this.statements = statements;
+    }
+    public override T Accept<T>(StatementVisitor<T> visitor)
+    {
+        return visitor.VisitBlock(this);
     }
 }
