@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 public class Parser
@@ -18,7 +19,7 @@ public class Parser
 
     private Expression Assignment()
     {
-        Expression expression = Equality();
+        Expression expression = Or();
 
         if (Match([TokenType.EQUAL]))
         {
@@ -30,11 +31,33 @@ public class Parser
                 Token name = ((Variable)expression).Name;
                 return new Assign(name, value);
             }
-
             Error(equals, "Invalid assignment target");
         }
         return expression;
 
+    }
+
+    private Expression Or()
+    {
+        Expression expression = And();
+        while (Match([TokenType.OR]))
+        {
+            Token operation = previous();
+            Expression rightExpression = And();
+            expression = new Logical(expression, operation, rightExpression);
+        }
+        return expression;
+    }
+    private Expression And()
+    {
+        Expression expression = Equality();
+        while (Match([TokenType.AND]))
+        {
+            Token operation = previous();
+            Expression rightExpression = Equality();
+            expression = new Logical(expression, operation, rightExpression);
+        }
+        return expression;
     }
     private Expression Equality()
     {
@@ -209,26 +232,102 @@ public class Parser
         Expression init = null;
         if (Match([TokenType.EQUAL]))
             init = ExpressionParse();
+        Consume(TokenType.SEMICOLON,"Expects a ';' after var declaration");
         return new Var(name, init);
     }
     private Statements Statement()
     {
+       
         if (Match([TokenType.WRITE]))
             return WriteStatement();
         if (Match([TokenType.LEFT_BRACE]))
             return new Block(BlockStatement());
+        if (Match([TokenType.IF]))
+            return IfStatement();
+        if (Match([TokenType.WHILE]))
+            return WhileStatement();
+        if (Match([TokenType.FOR]))
+            return ForStatement();   
+               
         return ExpressionStatement();
     }
 
+    private Statements ForStatement()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expects '(' after 'for'");
+
+        Statements initializer;
+        if (Match([TokenType.SEMICOLON]))
+            initializer = null;
+        else
+        {
+            if (Match([TokenType.VAR]))
+                initializer = VarDeclaration();
+            else
+                initializer = ExpressionStatement();
+        }
+        Expression condition = null;
+        if (!Check(TokenType.SEMICOLON))
+            condition = ExpressionParse();
+        Consume(TokenType.SEMICOLON, "Expects ';' after loop condition");
+        Expression increment = null;
+        if (!Check(TokenType.RIGHT_PAREN))
+            increment = ExpressionParse();
+        Consume(TokenType.RIGHT_PAREN, "Expects ')' after for clauses");
+        Statements body = Statement();
+
+        if (increment != null)
+        {
+            body = new Block(new List<Statements> { body, new ExpressionStatement(increment) });
+        }
+
+        if (condition == null)
+        {
+            condition = new Literal(true);
+        }
+
+        body = new WhileLoop(condition, body);
+
+        if (initializer != null)
+        {
+            body = new Block(new List<Statements> { initializer, body });
+        }
+
+        return body;
+    }
+
+    private Statements WhileStatement()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expectes '(' after  while");
+        Expression condition = ExpressionParse();
+        Consume(TokenType.RIGHT_PAREN, "Expectes ')' after while condition");
+        Statements body = Statement();
+        return new WhileLoop(condition, body);
+    }
+    private Statements IfStatement()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expectes '(' after an if");
+        Expression condition = ExpressionParse();
+        Consume(TokenType.RIGHT_PAREN, "Expectes ')' after if condition");
+        Statements thenBranch = Statement();
+        Statements elseBranch = null;
+        if (Match([TokenType.ELSE]))
+            elseBranch = Statement();
+        return new If(condition, thenBranch, elseBranch);
+
+    }
     private Statements WriteStatement()
     {
         Expression value = ExpressionParse();
+        Consume(TokenType.SEMICOLON, "Expects a ';' after Write");
         return new Write(value);
     }
 
     private Statements ExpressionStatement()
     {
         Expression value = ExpressionParse();
+        Consume(TokenType.SEMICOLON, "Expects a ';' after expression");
+
         return new ExpressionStatement(value);
     }
 

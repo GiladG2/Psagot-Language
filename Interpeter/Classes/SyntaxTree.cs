@@ -8,6 +8,7 @@ public interface Visitor<T>
     T VisitUnaryExpression(Unary unary);
     T VisitVariable(Variable variable);
     T VisitAssign(Assign assign);
+    T VisitLogical(Logical logical);
 }
 
 public abstract class Expression
@@ -47,7 +48,7 @@ public class BinaryExpression : Expression
         this.operation = operation;
         this.right = right;
     }
-
+    
     public override T Accept<T>(Visitor<T> visitor)
     {
         return visitor.VisitBinaryExperssion(this);
@@ -118,5 +119,24 @@ public class Variable :Expression{
     public override T Accept<T>(Visitor<T> visitor)
     {
         return visitor.VisitVariable(this);
+    }
+}
+
+public class Logical:Expression{
+    private Expression left;
+
+    private Token operation;
+    private Expression right;
+     public Expression Left { get => left; set => left = value; }
+     public Token Operation {get => operation; set => operation = value; }
+     public Expression Right { get => right; set => right = value; }
+    public Logical(Expression left, Token operation, Expression right){
+        this.left = left;
+        this.operation = operation;
+        this.right = right;
+    }
+    public override T Accept<T>(Visitor<T> visitor)
+    {
+        return visitor.VisitLogical(this);
     }
 }

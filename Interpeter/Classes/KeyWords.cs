@@ -20,5 +20,6 @@ public class KeyWords
     { "while", TokenType.WHILE },
     {"int", TokenType.NUMBER },
     {"Write", TokenType.WRITE },
+    {"break",TokenType.BREAK}
 };
 }

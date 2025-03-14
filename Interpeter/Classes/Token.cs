@@ -20,7 +20,7 @@ public enum TokenType
 
     // Keywords.
     AND, CLASS, ELSE, FALSE, METHOD, FOR, IF, NUL, OR,
-    WRITE, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
+    WRITE, RETURN, SUPER, THIS, TRUE, VAR, WHILE,BREAK,
 
     EOF //End of file
 }

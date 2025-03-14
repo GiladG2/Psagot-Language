@@ -14,17 +14,18 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         return null;
     }
 
-    public object VisitWrite(Write writeStatement){
-      object value = Evaluate(writeStatement.Expression);
-      Console.WriteLine(ToString(value));
-      return null;
+    public object VisitWrite(Write writeStatement)
+    {
+        object value = Evaluate(writeStatement.Expression);
+        Console.WriteLine(ToString(value));
+        return null;
     }
     public object VisitLiteralExpression(Literal literalExpression)
     {
         return literalExpression.Value;
     }
 
-   
+
     public object VisitGroupingExpression(Grouping groupingExpression)
     {
         return Evaluate(groupingExpression.Expression);
@@ -119,40 +120,84 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         return null;
     }
 
-    public  object VisitVar(Var var){
+    public object VisitVar(Var var)
+    {
         object value = null;
-        if(var.Initializer != null){
+        if (var.Initializer != null)
+        {
             value = Evaluate(var.Initializer);
         }
-        environment.Define(var.Name.Lexeme,value);
+        environment.Define(var.Name.Lexeme, value);
         return null;
     }
-    public  object VisitVariable(Variable variableExpression){
-    return environment.GetValue(variableExpression.Name);
+    public object VisitVariable(Variable variableExpression)
+    {
+        return environment.GetValue(variableExpression.Name);
     }
 
-    public object VisitAssign(Assign assignExpression){
+    public object VisitAssign(Assign assignExpression)
+    {
 
         object value = Evaluate(assignExpression.Value);
-        environment.Assign(assignExpression.Name,value);
+        environment.Assign(assignExpression.Name, value);
         return value;
     }
-    public object VisitBlock(Block block){
-        ExecuteBlock(block.Statements,new Environment(environment));
+    public object VisitBlock(Block block)
+    {
+        ExecuteBlock(block.Statements, new Environment(environment));
         return null;
     }
 
-    public void ExecuteBlock(List<Statements> statements, Environment environment){
+    public void ExecuteBlock(List<Statements> statements, Environment environment)
+    {
         Environment previous = this.environment;
-        try{
+        try
+        {
             this.environment = environment;
-            foreach(Statements statement in statements){
+            foreach (Statements statement in statements)
+            {
                 Execute(statement);
             }
         }
-        finally{
+        finally
+        {
             this.environment = previous;
         }
+    }
+
+    public object VisitIf(If ifStatement)
+    {
+        if (IsTrue(Evaluate(ifStatement.Condition)))
+            Execute(ifStatement.ThenBranch);
+        else
+        {
+            if (ifStatement.ElseBranch != null)
+                Execute(ifStatement.ElseBranch);
+        }
+        return null;
+    }
+    public object VisitLogical(Logical logical)
+    {
+        object left = Evaluate(logical.Left);
+        if (logical.Operation.TokenType == TokenType.OR)
+        {
+            if (IsTrue(left))
+            {
+                return left;
+            }
+        }
+        else
+        {
+            if (!IsTrue(left))
+                return left;
+        }
+        return Evaluate(logical.Right);
+    }
+
+    public object VisitWhileLoop(WhileLoop loop){
+        while(IsTrue(Evaluate(loop.Condition)))
+            Execute(loop.Body);
+        return null;
     }
     private object Evaluate(Expression expression)
     {
@@ -180,7 +225,8 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
     {
         try
         {
-            foreach(Statements statement in program){
+            foreach (Statements statement in program)
+            {
                 Execute(statement);
             }
         }
@@ -189,7 +235,7 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
             Psagot.RunTimeError(runTimeError);
         }
     }
-    
+
     private string ToString(object value)
     {
         if (value == null)
@@ -203,8 +249,9 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         }
         return value.ToString();
     }
-    private void Execute (Statements statement){
-             statement.Accept(this);
+    private void Execute(Statements statement)
+    {
+        statement.Accept(this);
     }
     public void IsNumberOperand(Token operation, object operand)
     {

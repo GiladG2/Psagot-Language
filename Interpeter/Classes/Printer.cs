@@ -29,7 +29,11 @@ public class AstPrinter : Visitor<string>
     public string VisitAssign(Assign assign){
         return Parenthesize(assign.Name.Lexeme,[assign.Value]);
     }
-    private string Parenthesize(string name, Expression[] expression)
+    public string VisitLogical(Logical logical){
+
+        return Parenthesize(logical.Operation.Lexeme,[logical.Left,logical.Right]);
+    }
+        private string Parenthesize(string name, Expression[] expression)
     {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.Append("(").Append(name);
