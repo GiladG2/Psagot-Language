@@ -4,7 +4,6 @@ using System.IO;
 
 public class Psagot
 {
-
     static bool hadError = false;
     static bool hadRuntimeError = false;
     private readonly static Interpeter interpeter = new Interpeter();

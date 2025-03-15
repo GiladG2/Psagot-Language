@@ -7,9 +7,9 @@ public class KeyWords
     { "else", TokenType.ELSE },
     { "false", TokenType.FALSE },
     { "for", TokenType.FOR },
-    { "fun", TokenType.METHOD },
+    { "function", TokenType.METHOD },
     { "if", TokenType.IF },
-    { "nul", TokenType.NUL },
+    { "nil", TokenType.NUL },
     { "or", TokenType.OR },
     { "print", TokenType.WRITE },
     { "return", TokenType.RETURN },
@@ -20,6 +20,6 @@ public class KeyWords
     { "while", TokenType.WHILE },
     {"int", TokenType.NUMBER },
     {"Write", TokenType.WRITE },
-    {"break",TokenType.BREAK}
+    {"break",TokenType.BREAK},
 };
 }

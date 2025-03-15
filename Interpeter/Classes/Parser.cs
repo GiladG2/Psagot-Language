@@ -157,9 +157,35 @@ public class Parser
             Expression rightExpression = Unary();
             return new Unary(operation, rightExpression);
         }
-        return Primary();
+        return Callee();
+    }
+    public Expression Callee(){
+        Expression expression = Primary();
+
+        while(true){
+            if(Match([TokenType.LEFT_PAREN]))
+              expression = FinishCall(expression);
+            else
+               break;
+        }
+
+        return expression;
     }
 
+    private Expression FinishCall(Expression expression){
+         List<Expression> arguments = new List<Expression>();
+         if(!Check(TokenType.RIGHT_PAREN)){
+            do{
+                if(arguments.Count >=255)
+                 Error(peek(),"A function cannot hold more than 255 arguments");
+                arguments.Add(ExpressionParse());
+                
+            }
+            while(Match([TokenType.COMMA]));
+         }
+         Token paren = Consume(TokenType.RIGHT_PAREN,"Expects ')' after arguments");
+         return new Call(expression, paren, arguments);
+    }
     private Expression Primary()
     {
         if (Match([TokenType.FALSE]))
@@ -186,6 +212,7 @@ public class Parser
             Consume(TokenType.RIGHT_PAREN, "Expected ')' after an expression");
             return new Grouping(expression);
         }
+
         throw Error(peek(), "Expect expression.");
     }
 
@@ -232,26 +259,63 @@ public class Parser
         Expression init = null;
         if (Match([TokenType.EQUAL]))
             init = ExpressionParse();
-        Consume(TokenType.SEMICOLON,"Expects a ';' after var declaration");
+        Consume(TokenType.SEMICOLON, "Expects a ';' after var declaration");
         return new Var(name, init);
     }
     private Statements Statement()
     {
-       
-        if (Match([TokenType.WRITE]))
-            return WriteStatement();
-        if (Match([TokenType.LEFT_BRACE]))
-            return new Block(BlockStatement());
-        if (Match([TokenType.IF]))
-            return IfStatement();
-        if (Match([TokenType.WHILE]))
-            return WhileStatement();
-        if (Match([TokenType.FOR]))
-            return ForStatement();   
-               
-        return ExpressionStatement();
+            if (Match([TokenType.WRITE]))
+                return WriteStatement();
+            if (Match([TokenType.LEFT_BRACE]))
+                return new Block(BlockStatement());
+            if (Match([TokenType.IF]))
+                return IfStatement();
+            if (Match([TokenType.WHILE]))
+                return WhileStatement();
+            if (Match([TokenType.FOR]))
+                return ForStatement();
+            if (Match([TokenType.BREAK]))
+                return BreakStatement();
+            if(Match([TokenType.METHOD]))
+               return FunctionStatement("function");
+            if(Match([TokenType.RETURN]))
+               return ReturnStatement();
+            return ExpressionStatement();       
     }
 
+    private Statements ReturnStatement(){
+        Token keyword = previous();
+        Expression value = null;
+        if(!Check(TokenType.SEMICOLON))
+           value = ExpressionParse();
+        Consume(TokenType.SEMICOLON,"Expects ';' after return");
+        return new Return(keyword,value);
+    }
+
+    private Statements FunctionStatement(string kind){
+        Token name = Consume(TokenType.IDENTIFIER,$"Expects {kind} name.");
+        Consume(TokenType.LEFT_PAREN,$"Expects '( after {kind} name.");
+        List<Token> parameters = new List<Token>();
+        if(!Check(TokenType.RIGHT_PAREN)){
+            do{
+                if(parameters.Count >= 255){
+                    Error(peek(),"Can't have more than 255 arguments.");
+                }
+                parameters.Add(Consume(TokenType.IDENTIFIER,"Expects parameter name."));
+            }
+            while(Match([TokenType.COMMA]));
+        }
+        
+        Consume(TokenType.RIGHT_PAREN,"Expects ')' after parameters.");
+        Consume(TokenType.LEFT_BRACE,"Expects '{'' before + " +  $"{kind} body.");
+        List<Statements> body = BlockStatement();
+        return new Function(name,parameters,body);
+    }
+    private Statements BreakStatement()
+    {
+        Consume(TokenType.SEMICOLON, "Expectes ';' after break");
+        return new Break();
+    }
     private Statements ForStatement()
     {
         Consume(TokenType.LEFT_PAREN, "Expects '(' after 'for'");

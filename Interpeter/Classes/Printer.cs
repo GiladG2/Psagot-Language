@@ -33,6 +33,10 @@ public class AstPrinter : Visitor<string>
 
         return Parenthesize(logical.Operation.Lexeme,[logical.Left,logical.Right]);
     }
+    public string VisitCall(Call call){
+
+        return Parenthesize(call.Paren.Literal.ToString(),[call.Callee]);
+    }
         private string Parenthesize(string name, Expression[] expression)
     {
         StringBuilder stringBuilder = new StringBuilder();

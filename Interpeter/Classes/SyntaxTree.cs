@@ -1,4 +1,5 @@
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.Versioning;
 
 public interface Visitor<T>
 {
@@ -9,6 +10,7 @@ public interface Visitor<T>
     T VisitVariable(Variable variable);
     T VisitAssign(Assign assign);
     T VisitLogical(Logical logical);
+    T VisitCall(Call call);
 }
 
 public abstract class Expression
@@ -16,13 +18,15 @@ public abstract class Expression
     public abstract T Accept<T>(Visitor<T> visitor);
 }
 
-public class Assign:Expression{
+public class Assign : Expression
+{
     private Token name;
     private Expression value;
-    
-    public Token Name {get => name; set => name = value; }
-    public Expression Value {get => value; set => this.value = value;}
-    public Assign(Token name, Expression value){
+
+    public Token Name { get => name; set => name = value; }
+    public Expression Value { get => value; set => this.value = value; }
+    public Assign(Token name, Expression value)
+    {
         this.name = name;
         this.value = value;
     }
@@ -48,7 +52,7 @@ public class BinaryExpression : Expression
         this.operation = operation;
         this.right = right;
     }
-    
+
     public override T Accept<T>(Visitor<T> visitor)
     {
         return visitor.VisitBinaryExperssion(this);
@@ -58,7 +62,7 @@ public class BinaryExpression : Expression
 public class Grouping : Expression
 {
     private Expression expression;
-    public Expression Expression  { get => expression; set => expression = value; }
+    public Expression Expression { get => expression; set => expression = value; }
 
     public Expression InnerExpression { get => expression; set => expression = value; }
 
@@ -110,10 +114,12 @@ public class Unary : Expression
     }
 }
 
-public class Variable :Expression{
+public class Variable : Expression
+{
     private Token name;
     public Token Name { get => name; set => name = value; }
-    public Variable(Token name) {
+    public Variable(Token name)
+    {
         this.name = name;
     }
     public override T Accept<T>(Visitor<T> visitor)
@@ -122,15 +128,17 @@ public class Variable :Expression{
     }
 }
 
-public class Logical:Expression{
+public class Logical : Expression
+{
     private Expression left;
 
     private Token operation;
     private Expression right;
-     public Expression Left { get => left; set => left = value; }
-     public Token Operation {get => operation; set => operation = value; }
-     public Expression Right { get => right; set => right = value; }
-    public Logical(Expression left, Token operation, Expression right){
+    public Expression Left { get => left; set => left = value; }
+    public Token Operation { get => operation; set => operation = value; }
+    public Expression Right { get => right; set => right = value; }
+    public Logical(Expression left, Token operation, Expression right)
+    {
         this.left = left;
         this.operation = operation;
         this.right = right;
@@ -140,3 +148,76 @@ public class Logical:Expression{
         return visitor.VisitLogical(this);
     }
 }
+public interface PsagotCallable
+{
+
+    public int Arity();
+    public object Call(Interpeter interpeter, List<object> arguments);
+}
+public class PsagotFunction : PsagotCallable
+{
+    private Function declaration;
+    private Environment closure;
+
+    public PsagotFunction(Function declaration, Environment closure)
+    {
+        this.closure = closure;
+        this.declaration = declaration;
+    }
+    public int Arity() => declaration.Parameters.Count;
+    public object Call(Interpeter interpeter, List<object> arguments)
+    {
+        Environment environment = new Environment(closure);
+        for (int i = 0; i < declaration.Parameters.Count; i++)
+        {
+            environment.Define(declaration.Parameters[i].Lexeme, arguments[i]);
+        }
+        try
+        {
+            interpeter.ExecuteBlock(declaration.Body, environment);
+
+        }
+        catch(ReturnException returnException){
+            return returnException.Value;
+        }
+        return null;
+    }
+
+    public override string ToString()
+    {
+        return $"<fn {declaration.Name.Lexeme}>";
+    }
+}
+public class ClockFunction : PsagotCallable
+{
+    public int Arity() => 0;
+    public object Call(Interpeter interpeter, List<object> arguments)
+    {
+        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0;
+    }
+    public override string ToString()
+    {
+        return "<Native function>";
+    }
+}
+public class Call : Expression
+{
+    private Expression callee;
+    private Token paren;
+    private List<Expression> arguements;
+    public Expression Callee { get => callee; set => callee = value; }
+    public Token Paren { get => paren; set => paren = value; }
+    public List<Expression> Arguments { get => arguements; set => arguements = value; }
+
+    public Call(Expression callee, Token paren, List<Expression> arguements)
+    {
+        this.callee = callee;
+        this.paren = paren;
+        this.arguements = arguements;
+    }
+    public override T Accept<T>(Visitor<T> visitor)
+    {
+        return visitor.VisitCall(this);
+    }
+}
+

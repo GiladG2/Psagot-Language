@@ -7,6 +7,9 @@ public interface StatementVisitor<T>
     T VisitBlock(Block block);
     T VisitIf(If ifStatement);
     T VisitWhileLoop(WhileLoop whileLoop);
+    T VisitBreak(Break breakStatement);
+    T VisitFunction(Function function);
+    T VisitReturn(Return returnStatement);
 }
 public abstract class Statements
 {
@@ -76,6 +79,8 @@ public class Block : Statements
     }
 }
 
+
+
 public class If : Statements
 {
     private Expression condition;
@@ -113,4 +118,67 @@ public class WhileLoop : Statements
     {
         return visitor.VisitWhileLoop(this);
     }
+}
+
+public class Break : Statements
+{
+
+    public override T Accept<T>(StatementVisitor<T> visitor)
+    {
+        return visitor.VisitBreak(this);
+    }
+}
+
+public class Function : Statements
+{
+    private Token name;
+    private List<Token> parameters;
+    private List<Statements> body;
+
+    public Token Name { get => name; set => name = value; }
+    public List<Token> Parameters { get => parameters; set => parameters = value; }
+    public List<Statements> Body { get => body; set => body = value; }
+
+    public Function(Token name, List<Token> parameters, List<Statements> body)
+    {
+        this.name = name;
+        this.parameters = parameters;
+        this.body = body;
+    }
+
+    public override T Accept<T>(StatementVisitor<T> visitor)
+    {
+        return visitor.VisitFunction(this);
+    }
+
+}
+
+
+public class Return : Statements
+{
+    private Token keyword;
+    private Expression value;
+
+    public Token Keyword { get => keyword; set => keyword = value; }
+    public Expression Value { get => value; set => value = this.value; }
+
+    public Return(Token keyword, Expression value)
+    {
+        this.keyword = keyword;
+        this.value = value;
+    }
+
+    public override T Accept<T>(StatementVisitor<T> visitor)
+    {
+        return visitor.VisitReturn(this);
+    }
+}
+public class ReturnException:Exception{
+    private object value;
+    public object Value { get => value; set => value = this.value; }
+
+    public ReturnException(object value){
+        this.value = value;
+    }
+
 }

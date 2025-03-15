@@ -1,13 +1,21 @@
 
 using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Xml;
 
 public class Interpeter : Visitor<object>, StatementVisitor<object>
 {
 
-    private Environment environment = new Environment();
+    public static Environment globals = new Environment();
+    private Environment environment = globals;
+
+    public Environment Globals {get => globals;set => globals = value;}
+
+    public Interpeter(){
+        globals.Define("clock",new ClockFunction());
+    }
     public object VisitExpressionStatement(ExpressionStatement expressionStatement)
     {
         Evaluate(expressionStatement.Expression);
@@ -156,6 +164,10 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
             this.environment = environment;
             foreach (Statements statement in statements)
             {
+                if (statement is Break)
+                {
+                    break;
+                }
                 Execute(statement);
             }
         }
@@ -194,10 +206,51 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         return Evaluate(logical.Right);
     }
 
-    public object VisitWhileLoop(WhileLoop loop){
-        while(IsTrue(Evaluate(loop.Condition)))
+    public object VisitWhileLoop(WhileLoop loop)
+    {
+        while (IsTrue(Evaluate(loop.Condition)))
+        {
+
             Execute(loop.Body);
+        }
         return null;
+    }
+
+    public object VisitBreak(Break breakStatement)
+    {
+        return false;
+    }
+
+    public object VisitCall(Call call)
+    {
+        object calleeVis = Evaluate(call.Callee);
+        List<object> arguments = new List<object>();
+        foreach (Expression expression in call.Arguments)
+        {
+            arguments.Add(Evaluate(expression));
+        }
+        PsagotCallable function;
+        if (!(calleeVis is PsagotCallable))
+            throw new RunTimeError(call.Paren, "Can only call functions and classes");
+        else
+            function = (PsagotCallable)calleeVis;
+        if(arguments.Count != function.Arity())
+           throw new RunTimeError(call.Paren,$"Expects {function.Arity()} arguments, but got {arguments.Count}.");
+        return function.Call(this, arguments);
+    }
+
+    public object VisitFunction(Function function){
+        PsagotFunction psagotFunction = new PsagotFunction(function,environment);
+        foreach(Token expression in function.Parameters)
+        environment.Define(function.Name.Lexeme,psagotFunction);
+        return null;
+    }
+    public object VisitReturn(Return returnStatement){
+        object value = null;
+        if(returnStatement.Value != null){
+            value = Evaluate(returnStatement.Value);
+        }
+        throw new ReturnException(value);
     }
     private object Evaluate(Expression expression)
     {
@@ -227,6 +280,7 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         {
             foreach (Statements statement in program)
             {
+
                 Execute(statement);
             }
         }
@@ -234,6 +288,7 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         {
             Psagot.RunTimeError(runTimeError);
         }
+
     }
 
     private string ToString(object value)

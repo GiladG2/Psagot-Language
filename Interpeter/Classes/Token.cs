@@ -48,7 +48,7 @@ public class Token
 
     public override string ToString()
     {
-        return $" {line}, {lexeme}, {literal}";
+        return $"Token {line}, {lexeme}, {literal}";
     }
 }
 
