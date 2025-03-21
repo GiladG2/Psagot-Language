@@ -11,10 +11,11 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
     public static Environment globals = new Environment();
     private Environment environment = globals;
 
-    public Environment Globals {get => globals;set => globals = value;}
+    public Environment Globals { get => globals; set => globals = value; }
 
-    public Interpeter(){
-        globals.Define("clock",new ClockFunction());
+    public Interpeter()
+    {
+        globals.Define("clock", new ClockFunction());
     }
     public object VisitExpressionStatement(ExpressionStatement expressionStatement)
     {
@@ -234,20 +235,26 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
             throw new RunTimeError(call.Paren, "Can only call functions and classes");
         else
             function = (PsagotCallable)calleeVis;
-        if(arguments.Count != function.Arity())
-           throw new RunTimeError(call.Paren,$"Expects {function.Arity()} arguments, but got {arguments.Count}.");
+        if (arguments.Count != function.Arity())
+            throw new RunTimeError(call.Paren, $"Expects {function.Arity()} arguments, but got {arguments.Count}.");
         return function.Call(this, arguments);
     }
 
-    public object VisitFunction(Function function){
-        PsagotFunction psagotFunction = new PsagotFunction(function,environment);
-        foreach(Token expression in function.Parameters)
-        environment.Define(function.Name.Lexeme,psagotFunction);
+    public object VisitFunction(Function function)
+    {
+        PsagotFunction psagotFunction = new PsagotFunction(function, environment);
+        environment.Define(function.Name.Lexeme, psagotFunction);
         return null;
     }
-    public object VisitReturn(Return returnStatement){
+    public object VisitLambda(LambdaExpression lambda)
+    {
+        return new PsagotLambdaFunction(lambda, new Environment(environment));
+    }
+    public object VisitReturn(Return returnStatement)
+    {
         object value = null;
-        if(returnStatement.Value != null){
+        if (returnStatement.Value != null)
+        {
             value = Evaluate(returnStatement.Value);
         }
         throw new ReturnException(value);

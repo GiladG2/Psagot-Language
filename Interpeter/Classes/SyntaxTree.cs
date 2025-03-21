@@ -11,6 +11,7 @@ public interface Visitor<T>
     T VisitAssign(Assign assign);
     T VisitLogical(Logical logical);
     T VisitCall(Call call);
+    T VisitLambda(LambdaExpression lambda);
 }
 
 public abstract class Expression
@@ -148,6 +149,23 @@ public class Logical : Expression
         return visitor.VisitLogical(this);
     }
 }
+public class LambdaExpression : Expression
+{
+    public List<Statements> Body { get; }
+    public List<Token> Parameters { get; }
+
+    public LambdaExpression(List<Statements> body, List<Token> parameters)
+    {
+        Body = body;
+        Parameters = parameters;
+    }
+
+    public override T Accept<T>(Visitor<T> visitor)
+    {
+        return visitor.VisitLambda(this);
+    }
+}
+
 public interface PsagotCallable
 {
 
@@ -177,7 +195,8 @@ public class PsagotFunction : PsagotCallable
             interpeter.ExecuteBlock(declaration.Body, environment);
 
         }
-        catch(ReturnException returnException){
+        catch (ReturnException returnException)
+        {
             return returnException.Value;
         }
         return null;
@@ -186,6 +205,40 @@ public class PsagotFunction : PsagotCallable
     public override string ToString()
     {
         return $"<fn {declaration.Name.Lexeme}>";
+    }
+}
+
+public class PsagotLambdaFunction : PsagotCallable
+{
+
+    private LambdaExpression lambda;
+    private Environment closure;
+    
+
+    public PsagotLambdaFunction(LambdaExpression lambda, Environment closure){
+        this.lambda = lambda;
+        this.closure = closure;
+    }
+    public int Arity() => lambda.Parameters.Count;
+    public object Call(Interpeter interpeter, List<object> arguments)
+    {
+        Environment environment = new Environment(closure);
+
+        for (int i = 0; i < lambda.Parameters.Count; i++)
+        {
+            environment.Define(lambda.Parameters[i].Lexeme, arguments[i]);
+        }
+
+        try
+        {
+            interpeter.ExecuteBlock(lambda.Body, environment);
+        }
+        catch (ReturnException returnValue)
+        {
+            return returnValue.Value;
+        }
+
+        return null;
     }
 }
 public class ClockFunction : PsagotCallable

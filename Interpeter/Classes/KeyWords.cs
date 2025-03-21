@@ -11,7 +11,6 @@ public class KeyWords
     { "if", TokenType.IF },
     { "nil", TokenType.NUL },
     { "or", TokenType.OR },
-    { "print", TokenType.WRITE },
     { "return", TokenType.RETURN },
     { "super", TokenType.SUPER },
     { "this", TokenType.THIS },
@@ -19,7 +18,8 @@ public class KeyWords
     { "var", TokenType.VAR },
     { "while", TokenType.WHILE },
     {"int", TokenType.NUMBER },
-    {"Write", TokenType.WRITE },
+    {"write", TokenType.WRITE },
     {"break",TokenType.BREAK},
+    {"=>",TokenType.LAMBDA},
 };
 }

@@ -10,34 +10,47 @@ public class AstPrinter : Visitor<string>
     {
         return Parenthesize(binaryExpression.Operation.Lexeme, new Expression[] { binaryExpression.Left, binaryExpression.Right });
     }
-    public string VisitGroupingExpression(Grouping groupingExpression){
-        return Parenthesize("group", new Expression[]{groupingExpression.Expression});
+    public string VisitGroupingExpression(Grouping groupingExpression)
+    {
+        return Parenthesize("group", new Expression[] { groupingExpression.Expression });
     }
-    public string VisitLiteralExpression(Literal literalExpression){
-        if(literalExpression.Value == null)
-          return "nul";
+    public string VisitLiteralExpression(Literal literalExpression)
+    {
+        if (literalExpression.Value == null)
+            return "nil";
         return literalExpression.Value.ToString();
     }
-    
-    public string VisitUnaryExpression(Unary unaryExpression){
-        return Parenthesize(unaryExpression.Operation.Lexeme,new Expression[]{unaryExpression.RightExpression});
-        
+
+    public string VisitUnaryExpression(Unary unaryExpression)
+    {
+        return Parenthesize(unaryExpression.Operation.Lexeme, new Expression[] { unaryExpression.RightExpression });
+
     }
-    public string VisitVariable(Variable variable){
+    public string VisitVariable(Variable variable)
+    {
         return Parenthesize(variable.Name.Lexeme, new Expression[2]);
     }
-    public string VisitAssign(Assign assign){
-        return Parenthesize(assign.Name.Lexeme,[assign.Value]);
+    public string VisitAssign(Assign assign)
+    {
+        return Parenthesize(assign.Name.Lexeme, [assign.Value]);
     }
-    public string VisitLogical(Logical logical){
+    public string VisitLogical(Logical logical)
+    {
 
-        return Parenthesize(logical.Operation.Lexeme,[logical.Left,logical.Right]);
+        return Parenthesize(logical.Operation.Lexeme, [logical.Left, logical.Right]);
     }
-    public string VisitCall(Call call){
 
-        return Parenthesize(call.Paren.Literal.ToString(),[call.Callee]);
+    public string VisitLambda(LambdaExpression lambda)
+    {
+
+        return Parenthesize(lambda.ToString(), [lambda]);
     }
-        private string Parenthesize(string name, Expression[] expression)
+    public string VisitCall(Call call)
+    {
+
+        return Parenthesize(call.Paren.Literal.ToString(), [call.Callee]);
+    }
+    private string Parenthesize(string name, Expression[] expression)
     {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.Append("(").Append(name);

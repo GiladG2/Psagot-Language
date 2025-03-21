@@ -50,7 +50,25 @@ public class Scanner
             case '!': addToken(match('=') ? TokenType.NOT_EQUAL : TokenType.NOT); break;
             case '<': addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
             case '>': addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
-            case '=': addToken(match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL); break;
+            case '=':
+                if (peek() == '>')
+                {
+                    addToken(TokenType.LAMBDA);
+                    advance();
+                }
+                else
+                {
+                    if (peek() == '=')
+                    {
+
+                        addToken(TokenType.EQUAL_EQUAL);
+                        advance();
+                    }
+                    else
+                        addToken(TokenType.EQUAL);
+                }
+              advance();
+              break;
             case '/':
                 if (peek() == '*')
                 {

@@ -1,7 +1,10 @@
-function Fib(n){
-  if(n<=1)
-   return n;
-  return Fib(n-1) + Fib(n-2);
+function ApplyFunction(func, x, y) {
+    return func(x, y);
 }
 
-Write Fib(5);
+function TestApply() {
+    var subtract = (a, b) => { return a - b; };
+    write ApplyFunction(subtract, 10, 4);
+}
+
+TestApply();

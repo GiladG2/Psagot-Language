@@ -159,63 +159,144 @@ public class Parser
         }
         return Callee();
     }
-    public Expression Callee(){
+    public Expression Callee()
+    {
         Expression expression = Primary();
 
-        while(true){
-            if(Match([TokenType.LEFT_PAREN]))
-              expression = FinishCall(expression);
+        while (true)
+        {
+            if (Match([TokenType.LEFT_PAREN]))
+                expression = FinishCall(expression);
             else
-               break;
+                break;
         }
 
         return expression;
     }
+    private Expression ParseLambda()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expected '(' before lambda parameters.");
 
-    private Expression FinishCall(Expression expression){
-         List<Expression> arguments = new List<Expression>();
-         if(!Check(TokenType.RIGHT_PAREN)){
-            do{
-                if(arguments.Count >=255)
-                 Error(peek(),"A function cannot hold more than 255 arguments");
-                arguments.Add(ExpressionParse());
-                
+        List<Token> parameters = new List<Token>();
+        if (!Check(TokenType.RIGHT_PAREN))
+        {
+            do
+            {
+                parameters.Add(Consume(TokenType.IDENTIFIER, "Expected parameter name."));
             }
-            while(Match([TokenType.COMMA]));
-         }
-         Token paren = Consume(TokenType.RIGHT_PAREN,"Expects ')' after arguments");
-         return new Call(expression, paren, arguments);
+            while (Match([TokenType.COMMA]));
+        }
+
+        Consume(TokenType.RIGHT_PAREN, "Expected ')' after lambda parameters.");
+        Consume(TokenType.LAMBDA, "Expected '=>' after parameters.");
+
+        List<Statements> body = new List<Statements>();
+        if (Match([TokenType.LEFT_BRACE]))
+        {
+            body = BlockStatement();
+        }
+        else
+        {
+            body.Add(new ExpressionStatement(ExpressionParse()));
+        }
+
+        return new LambdaExpression(body, parameters);
+    }
+
+    private Expression ParseLambda(List<Token> parameters)
+    {
+        List<Statements> body = new List<Statements>();
+
+        if (Match([TokenType.LEFT_BRACE])) // Multi-line body
+        {
+            body = BlockStatement();
+        }
+        else // Single-line expression body
+        {
+            body.Add(new ExpressionStatement(ExpressionParse()));
+        }
+
+        return new LambdaExpression(body, parameters);
+    }
+
+    private Expression FinishCall(Expression expression)
+    {
+        List<Expression> arguments = new List<Expression>();
+        if (!Check(TokenType.RIGHT_PAREN))
+        {
+            do
+            {
+                if (arguments.Count >= 255)
+                    Error(peek(), "A function cannot hold more than 255 arguments");
+                arguments.Add(ExpressionParse());
+
+            }
+            while (Match([TokenType.COMMA]));
+        }
+        Token paren = Consume(TokenType.RIGHT_PAREN, "Expects ')' after arguments");
+        return new Call(expression, paren, arguments);
     }
     private Expression Primary()
     {
-        if (Match([TokenType.FALSE]))
-        {
-            return new Literal(false);
-        }
-        if (Match([TokenType.TRUE]))
-        {
-            return new Literal(true);
-        }
-        if (Match([TokenType.NUL]))
-        {
-            return new Literal(null);
-        }
+        if (Match([TokenType.FALSE])) return new Literal(false);
+        if (Match([TokenType.TRUE])) return new Literal(true);
+        if (Match([TokenType.NUL])) return new Literal(null);
+
         if (Match([TokenType.NUMBER, TokenType.STRING]))
-        {
             return new Literal(previous().Literal);
-        }
+
         if (Match([TokenType.IDENTIFIER]))
-            return new Variable(previous());
-        if (Match([TokenType.LEFT_PAREN]))
+            return new Variable(previous()); // Identifiers can be function names or variables
+
+        if (Match([TokenType.LEFT_PAREN])) // Handles both Lambdas & Grouping
         {
+            if (Check(TokenType.RIGHT_PAREN)) // Empty `()`
+            {
+                advance(); // Consume `)`
+                if (Match([TokenType.LAMBDA])) // `() => expr`
+                    return ParseLambda(new List<Token>()); // No parameters
+                else
+                    throw Error(peek(), "Expected '=>' after empty lambda parameter list.");
+            }
+
+            // Try parsing parameters `(x, y, z)`
+            List<Token> parameters = new List<Token>();
+            bool isLambda = false;
+
+            do
+            {
+                if (parameters.Count >= 255)
+                    Error(peek(), "A function cannot have more than 255 parameters.");
+                parameters.Add(Consume(TokenType.IDENTIFIER, "Expected parameter name."));
+            }
+            while (Match([TokenType.COMMA]));
+
+            if (Match([TokenType.RIGHT_PAREN])) // Closing `)`
+            {
+                if (Match([TokenType.LAMBDA])) // `=>` found → It's a lambda
+                    return ParseLambda(parameters);
+            }
+            else
+            {
+                throw Error(peek(), "Expected ')' after lambda parameters.");
+            }
+
+            // If no `=>` is found, treat it as a normal grouping expression
             Expression expression = ExpressionParse();
-            Consume(TokenType.RIGHT_PAREN, "Expected ')' after an expression");
+            Consume(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
             return new Grouping(expression);
         }
 
         throw Error(peek(), "Expect expression.");
     }
 
+    private bool LookAhead(TokenType tokenType)
+    {
+        if (current + 1 < tokens.Count)
+            if (tokenType == tokens[current + 1].TokenType)
+                return true;
+        return false;
+    }
     private Token Consume(TokenType tokenType, string message)
     {
         if (Check(tokenType))
@@ -264,52 +345,57 @@ public class Parser
     }
     private Statements Statement()
     {
-            if (Match([TokenType.WRITE]))
-                return WriteStatement();
-            if (Match([TokenType.LEFT_BRACE]))
-                return new Block(BlockStatement());
-            if (Match([TokenType.IF]))
-                return IfStatement();
-            if (Match([TokenType.WHILE]))
-                return WhileStatement();
-            if (Match([TokenType.FOR]))
-                return ForStatement();
-            if (Match([TokenType.BREAK]))
-                return BreakStatement();
-            if(Match([TokenType.METHOD]))
-               return FunctionStatement("function");
-            if(Match([TokenType.RETURN]))
-               return ReturnStatement();
-            return ExpressionStatement();       
+        if (Match([TokenType.WRITE]))
+            return WriteStatement();
+        if (Match([TokenType.LEFT_BRACE]))
+            return new Block(BlockStatement());
+        if (Match([TokenType.IF]))
+            return IfStatement();
+        if (Match([TokenType.WHILE]))
+            return WhileStatement();
+        if (Match([TokenType.FOR]))
+            return ForStatement();
+        if (Match([TokenType.BREAK]))
+            return BreakStatement();
+        if (Match([TokenType.METHOD]))
+            return FunctionStatement("function");
+        if (Match([TokenType.RETURN]))
+            return ReturnStatement();
+        return ExpressionStatement();
     }
 
-    private Statements ReturnStatement(){
+    private Statements ReturnStatement()
+    {
         Token keyword = previous();
         Expression value = null;
-        if(!Check(TokenType.SEMICOLON))
-           value = ExpressionParse();
-        Consume(TokenType.SEMICOLON,"Expects ';' after return");
-        return new Return(keyword,value);
+        if (!Check(TokenType.SEMICOLON))
+            value = ExpressionParse();
+        Consume(TokenType.SEMICOLON, "Expects ';' after return");
+        return new Return(keyword, value);
     }
 
-    private Statements FunctionStatement(string kind){
-        Token name = Consume(TokenType.IDENTIFIER,$"Expects {kind} name.");
-        Consume(TokenType.LEFT_PAREN,$"Expects '( after {kind} name.");
+    private Statements FunctionStatement(string kind)
+    {
+        Token name = Consume(TokenType.IDENTIFIER, $"Expects {kind} name.");
+        Consume(TokenType.LEFT_PAREN, $"Expects '( after {kind} name.");
         List<Token> parameters = new List<Token>();
-        if(!Check(TokenType.RIGHT_PAREN)){
-            do{
-                if(parameters.Count >= 255){
-                    Error(peek(),"Can't have more than 255 arguments.");
+        if (!Check(TokenType.RIGHT_PAREN))
+        {
+            do
+            {
+                if (parameters.Count >= 255)
+                {
+                    Error(peek(), "Can't have more than 255 arguments.");
                 }
-                parameters.Add(Consume(TokenType.IDENTIFIER,"Expects parameter name."));
+                parameters.Add(Consume(TokenType.IDENTIFIER, "Expects parameter name."));
             }
-            while(Match([TokenType.COMMA]));
+            while (Match([TokenType.COMMA]));
         }
-        
-        Consume(TokenType.RIGHT_PAREN,"Expects ')' after parameters.");
-        Consume(TokenType.LEFT_BRACE,"Expects '{'' before + " +  $"{kind} body.");
+
+        Consume(TokenType.RIGHT_PAREN, "Expects ')' after parameters.");
+        Consume(TokenType.LEFT_BRACE, "Expects '{'' before + " + $"{kind} body.");
         List<Statements> body = BlockStatement();
-        return new Function(name,parameters,body);
+        return new Function(name, parameters, body);
     }
     private Statements BreakStatement()
     {
