@@ -54,10 +54,14 @@ public class Psagot
         foreach (Token token in tokens)
         {
             if (hadError)
-                return; 
-                if (hadRuntimeError)
+                return;
+            if (hadRuntimeError)
                 return;
         }
+        Resolver resolver = new Resolver(interpeter);
+        resolver.Resolve(statements);
+        if (hadError)
+            return;
         interpeter.Interpert(statements);
 
     }

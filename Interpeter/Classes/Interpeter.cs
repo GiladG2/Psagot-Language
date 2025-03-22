@@ -5,11 +5,15 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Xml;
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 public class Interpeter : Visitor<object>, StatementVisitor<object>
 {
-
     public static Environment globals = new Environment();
     private Environment environment = globals;
+    // Resolver integration: map expressions to their scope depth.
+    private readonly Dictionary<Expression, int> locals = new Dictionary<Expression, int>();
 
     public Environment Globals { get => globals; set => globals = value; }
 
@@ -17,6 +21,24 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
     {
         globals.Define("clock", new ClockFunction());
     }
+
+    // Resolver will call this method.
+    public void Resolve(Expression expr, int depth)
+    {
+        locals[expr] = depth;
+    }
+
+    // Looks up a variable, using resolved scope depth if available.
+    private object LookUpVariable(Token name, Expression expr)
+    {
+        if (locals.ContainsKey(expr))
+        {
+            int distance = locals[expr];
+            return environment.GetAt(distance, name.Lexeme);
+        }
+        return globals.Get(name);
+    }
+
     public object VisitExpressionStatement(ExpressionStatement expressionStatement)
     {
         Evaluate(expressionStatement.Expression);
@@ -29,11 +51,11 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         Console.WriteLine(ToString(value));
         return null;
     }
+
     public object VisitLiteralExpression(Literal literalExpression)
     {
         return literalExpression.Value;
     }
-
 
     public object VisitGroupingExpression(Grouping groupingExpression)
     {
@@ -43,7 +65,6 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
     public object VisitUnaryExpression(Unary unaryExpression)
     {
         object right = Evaluate(unaryExpression.RightExpression);
-
         switch (unaryExpression.Operation.TokenType)
         {
             case TokenType.MINUS:
@@ -54,12 +75,11 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         }
         return null;
     }
+
     public object VisitBinaryExperssion(BinaryExpression binaryExperssion)
     {
-
         object left = Evaluate(binaryExperssion.Left);
         object right = Evaluate(binaryExperssion.Right);
-
         switch (binaryExperssion.Operation.TokenType)
         {
             case TokenType.MINUS:
@@ -70,14 +90,14 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
                 {
                     return left.ToString() + right.ToString();
                 }
-                if (left is int && right is int || right is double && left is double)
+                if ((left is int && right is int) || (left is double && right is double))
                 {
                     return (double)left + (double)right;
                 }
-                throw new RunTimeError(binaryExperssion.Operation, "Addition expects two string or two numbers");
+                throw new RunTimeError(binaryExperssion.Operation, "Addition expects two strings or two numbers");
             case TokenType.SLASH:
-                if ((double)right == 0 || (int)right == 0)
-                    throw new RunTimeError(binaryExperssion.Operation, "Attempt of division by 0");
+                if (((double)right) == 0 || ((int)right) == 0)
+                    throw new RunTimeError(binaryExperssion.Operation, "Division by zero");
                 IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left / (double)right;
             case TokenType.STAR:
@@ -86,44 +106,34 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
             case TokenType.GREATER:
                 if (left is string && right is string)
                 {
-                    string left2 = (string)left;
-                    string right2 = (string)right;
-                    return left2.CompareTo(right2) > 0;
+                    return ((string)left).CompareTo((string)right) > 0;
                 }
                 IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left > (double)right;
             case TokenType.GREATER_EQUAL:
                 if (left is string && right is string)
                 {
-                    string left2 = (string)left;
-                    string right2 = (string)right;
-                    return left2.CompareTo(right2) >= 0;
+                    return ((string)left).CompareTo((string)right) >= 0;
                 }
                 IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left >= (double)right;
             case TokenType.LESS:
                 if (left is string && right is string)
                 {
-                    string left2 = (string)left;
-                    string right2 = (string)right;
-                    return left2.CompareTo(right2) < 0;
+                    return ((string)left).CompareTo((string)right) < 0;
                 }
                 IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left < (double)right;
             case TokenType.LESS_EQUAL:
                 if (left is string && right is string)
                 {
-                    string left2 = (string)left;
-                    string right2 = (string)right;
-                    return left2.CompareTo(right2) <= 0;
+                    return ((string)left).CompareTo((string)right) <= 0;
                 }
                 IsNumberOperand(binaryExperssion.Operation, left, right);
                 return (double)left <= (double)right;
             case TokenType.NOT_EQUAL:
-                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return !IsEqual(left, right);
             case TokenType.EQUAL_EQUAL:
-                IsNumberOperand(binaryExperssion.Operation, left, right);
                 return IsEqual(left, right);
         }
         return null;
@@ -139,18 +149,19 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         environment.Define(var.Name.Lexeme, value);
         return null;
     }
+
     public object VisitVariable(Variable variableExpression)
     {
-        return environment.GetValue(variableExpression.Name);
+        return LookUpVariable(variableExpression.Name, variableExpression);
     }
 
     public object VisitAssign(Assign assignExpression)
     {
-
         object value = Evaluate(assignExpression.Value);
         environment.Assign(assignExpression.Name, value);
         return value;
     }
+
     public object VisitBlock(Block block)
     {
         ExecuteBlock(block.Statements, new Environment(environment));
@@ -182,13 +193,11 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
     {
         if (IsTrue(Evaluate(ifStatement.Condition)))
             Execute(ifStatement.ThenBranch);
-        else
-        {
-            if (ifStatement.ElseBranch != null)
-                Execute(ifStatement.ElseBranch);
-        }
+        else if (ifStatement.ElseBranch != null)
+            Execute(ifStatement.ElseBranch);
         return null;
     }
+
     public object VisitLogical(Logical logical)
     {
         object left = Evaluate(logical.Left);
@@ -211,7 +220,6 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
     {
         while (IsTrue(Evaluate(loop.Condition)))
         {
-
             Execute(loop.Body);
         }
         return null;
@@ -219,6 +227,7 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
 
     public object VisitBreak(Break breakStatement)
     {
+        // For simplicity, break just returns false (or handle it as needed).
         return false;
     }
 
@@ -236,7 +245,7 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         else
             function = (PsagotCallable)calleeVis;
         if (arguments.Count != function.Arity())
-            throw new RunTimeError(call.Paren, $"Expects {function.Arity()} arguments, but got {arguments.Count}.");
+            throw new RunTimeError(call.Paren, $"Expected {function.Arity()} arguments, but got {arguments.Count}.");
         return function.Call(this, arguments);
     }
 
@@ -246,10 +255,12 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         environment.Define(function.Name.Lexeme, psagotFunction);
         return null;
     }
+
     public object VisitLambda(LambdaExpression lambda)
     {
         return new PsagotLambdaFunction(lambda, new Environment(environment));
     }
+
     public object VisitReturn(Return returnStatement)
     {
         object value = null;
@@ -259,10 +270,12 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         }
         throw new ReturnException(value);
     }
+
     private object Evaluate(Expression expression)
     {
         return expression.Accept(this);
     }
+
     private bool IsTrue(object expression)
     {
         if (expression == null)
@@ -287,7 +300,6 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         {
             foreach (Statements statement in program)
             {
-
                 Execute(statement);
             }
         }
@@ -295,7 +307,6 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         {
             Psagot.RunTimeError(runTimeError);
         }
-
     }
 
     private string ToString(object value)
@@ -311,24 +322,27 @@ public class Interpeter : Visitor<object>, StatementVisitor<object>
         }
         return value.ToString();
     }
+
     private void Execute(Statements statement)
     {
         statement.Accept(this);
     }
+
     public void IsNumberOperand(Token operation, object operand)
     {
         if (operand is double || operand is int)
             return;
         throw new RunTimeError(operation, "Expected a number");
     }
+
     public void IsNumberOperand(Token operation, object left, object right)
     {
-        if ((left is double && right is double) || (right is int && left is int))
+        if ((left is double && right is double) || (left is int && right is int))
             return;
         throw new RunTimeError(operation, "Expected a number");
     }
-
 }
+
 
 
 

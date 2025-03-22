@@ -1,10 +1,6 @@
-function ApplyFunction(func, x, y) {
-    return func(x, y);
+function TestError() {
+    var x = x + 1; // Error: cannot read local variable in its own initializer
+    write x;
 }
 
-function TestApply() {
-    var subtract = (a, b) => { return a - b; };
-    write ApplyFunction(subtract, 10, 4);
-}
-
-TestApply();
+TestError();
